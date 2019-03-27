@@ -2,6 +2,7 @@ import itertools
 import pickle
 import random
 import os
+from clint.textui import colored, puts, prompt
 
 
 def solver(words, codes):
@@ -119,18 +120,22 @@ if __name__ == "__main__":
         solution = solutions.pop()
         reply = encoder(solution, codes, query)
         i += 1
-        print('#'*100)
-        print("QUESTION "+str(i))
-        print('#'*100)
-        print("The 4 words are: ", [x.upper() for x in words_4])
-        print("The 3 codes are: ", [x.upper() for x in codes])
-        user_reply = input("What is the code for "+query.upper()+" : ")
-        print("="*100)
+        message = f"{'#'*100} \n"
+        message += f"QUESTION {str(i)}\n"
+        message += f"{'#'*100} \n"
+        message += f"The 4 words are: {colored.cyan('  '.join([x.upper() for x in words_4]))}\n"
+        message += f"The 3 codes are: {colored.cyan('  '.join([x.upper() for x in codes]))}\n"
+        puts(message)
+        question = f"What is the code for {colored.cyan(query.upper())}: "
+        user_reply = prompt.query(question)
+        message = f"{'='*100} \n"
         if user_reply == "exit":
-            print("BYE! BYE!")
-            break
-        if user_reply == reply:
+            message += f"BYE! BYE!\n"
+            alive = False
+        elif user_reply == reply:
             c += 1
-            print("You are RIGHT! => Score: "+str(c)+"/"+str(i))
+            message += f"{colored.blue('You are RIGHT!')} => Score: {colored.blue(str(c)+' / '+str(i))}\n"
         else:
-            print("You are WRONG! Correct answer is: "+reply+" => Score: "+str(c)+"/"+str(i))
+            message += f"{colored.red('You are WRONG!')} Correct answer is: {colored.red(reply)}"
+            message += f" => Score: {colored.blue(str(c)+' / '+str(i))}\n"
+        puts(message)
