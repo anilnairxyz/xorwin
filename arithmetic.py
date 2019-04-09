@@ -176,9 +176,11 @@ if __name__ == "__main__":
         x = randint(0, 10)
         if x % 2 == 0:
             arithmetic.value_range = (1, 100)
+            arithmetic.operand_count = 4
             q = arithmetic.frame_integer_question()
         else:
             arithmetic.value_range = (2, 13)
+            arithmetic.operand_count = 3
             q = arithmetic.frame_fraction_question()
         question = q.sequence_str
         result = q.result
