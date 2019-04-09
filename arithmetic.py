@@ -127,28 +127,43 @@ class Question1:
             divisor = randint(*div_range)
         quotient = randint(*div_range)
         dividend = quotient * divisor
-        return dividend, divisor
+        return Decimal(dividend), Decimal(divisor)
 
     def _create_integer_multiplication(self):
         mul_range = (int(Decimal(self.value_range[0]).sqrt()), int(Decimal(self.value_range[1]).sqrt()))
         a = randint(*mul_range)
         b = randint(*mul_range)
-        return a, b
+        return Decimal(a), Decimal(b)
 
     def _create_integer_addition(self):
         a = randint(*self.value_range)
         b = randint(*self.value_range)
-        return a, b
+        return Decimal(a), Decimal(b)
 
     def _combine_operations(self):
         first_operation = True
         for i, x in enumerate(self.operation_seq):
             if first_operation:
-                operation = Operation(x, Decimal(self.operand_seq[i]), Decimal(self.operand_seq[i+1]))
+                operation = Operation(x, self.operand_seq[i], self.operand_seq[i+1])
             else:
-                operation = Operation(x, operation, Decimal(self.operand_seq[i+1]))
+                operation = Operation(x, operation, self.operand_seq[i+1])
             first_operation = False
         return operation
+
+    def frame_fraction_question(self, fraction_type="normal"):
+        self.operand_seq = [None] * self.operand_count
+        self.operation_seq = sample(self._sample_operations, self._operation_count)
+        self.operand_seq = self._create_random_fractions(self.operand_count)
+        self.question = self._combine_operations()
+        return self.question
+
+    def _create_random_fractions(self, count):
+        operand_seq = []
+        for _ in range(count):
+            numerator = randint(*self.value_range)
+            denominator = randint(*self.value_range)
+            operand_seq.append(Fraction(numerator, denominator))
+        return operand_seq
 
 
 if __name__ == "__main__":
@@ -158,7 +173,13 @@ if __name__ == "__main__":
     arithmetic = Question1()
     while alive:
         i += 1
-        q = arithmetic.frame_question()
+        x = randint(0, 10)
+        if x % 2 == 0:
+            arithmetic.value_range = (1, 100)
+            q = arithmetic.frame_integer_question()
+        else:
+            arithmetic.value_range = (2, 13)
+            q = arithmetic.frame_fraction_question()
         question = q.sequence_str
         result = q.result
         message = f"{'#'*100} \n"
@@ -170,10 +191,17 @@ if __name__ == "__main__":
         if user_reply == "exit":
             message += f"BYE! BYE!\n"
             alive = False
-        elif Decimal(user_reply) == result:
-            c += 1
-            message += f"{colored.blue('You are RIGHT!')} => Score: {colored.blue(str(c)+' / '+str(i))}\n"
+        elif user_reply.isalpha():
+            message += f"ERROR!\n"
         else:
-            message += f"{colored.red('You are WRONG!')} Correct answer is: {colored.red(result)}"
-            message += f" => Score: {colored.blue(str(c)+' / '+str(i))}\n"
+            if x % 2 == 0:
+                user_reply_formatted = Decimal(user_reply)
+            else:
+                user_reply_formatted = Fraction(user_reply)
+            if user_reply_formatted == result:
+                c += 1
+                message += f"{colored.blue('You are RIGHT!')} => Score: {colored.blue(str(c)+' / '+str(i))}\n"
+            else:
+                message += f"{colored.red('You are WRONG!')} Correct answer is: {colored.red(result)}"
+                message += f" => Score: {colored.blue(str(c)+' / '+str(i))}\n"
         puts(message)
