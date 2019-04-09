@@ -150,10 +150,12 @@ class Question1:
             first_operation = False
         return operation
 
-    def frame_fraction_question(self, fraction_type="normal"):
+    def frame_fraction_question(self, mixed=False):
         self.operand_seq = [None] * self.operand_count
         self.operation_seq = sample(self._sample_operations, self._operation_count)
         self.operand_seq = self._create_random_fractions(self.operand_count)
+        if mixed:
+            self.operand_seq = [Mixed(x) for x in self.operand_seq]
         self.question = self._combine_operations()
         return self.question
 
@@ -173,15 +175,19 @@ if __name__ == "__main__":
     arithmetic = Question1()
     while alive:
         i += 1
-        x = randint(0, 10)
-        if x % 2 == 0:
+        x = randint(1, 15)
+        if x % 3 == 0:
             arithmetic.value_range = (1, 100)
             arithmetic.operand_count = 4
             q = arithmetic.frame_integer_question()
-        else:
+        elif x % 3 == 1:
             arithmetic.value_range = (2, 13)
             arithmetic.operand_count = 3
             q = arithmetic.frame_fraction_question()
+        else:
+            arithmetic.value_range = (2, 13)
+            arithmetic.operand_count = 3
+            q = arithmetic.frame_fraction_question(mixed=True)
         question = q.sequence_str
         result = q.result
         message = f"{'#'*100} \n"
@@ -196,10 +202,10 @@ if __name__ == "__main__":
         elif user_reply.isalpha():
             message += f"ERROR!\n"
         else:
-            if x % 2 == 0:
+            if x % 3 == 0:
                 user_reply_formatted = Decimal(user_reply)
             else:
-                user_reply_formatted = Fraction(user_reply)
+                user_reply_formatted = Mixed(user_reply)
             if user_reply_formatted == result:
                 c += 1
                 message += f"{colored.blue('You are RIGHT!')} => Score: {colored.blue(str(c)+' / '+str(i))}\n"
