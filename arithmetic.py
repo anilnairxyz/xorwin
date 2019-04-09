@@ -6,133 +6,147 @@ from clint.textui import colored, puts, prompt
 
 
 class Operation:
+    """An operation format class.
+    """
 
-    def __init__(self, operation="+", operand=(0, 0)):
+    def __init__(self, operation="+", *operands):
 
-        self.sequence = None
-        self.result = None
+        self.sequence_json = {"operation": operation, "operand": []}
+        self.sequence_str = []
         self.formula = []
-        self.printable = []
+        self.result = None
+        self.operand_str = {"+": " + ", "-": " - ", "*": " * ", "/": " \u00F7 ", "square": " **2 "}
+        self.operand_for = {"+": " + ", "-": " - ", "*": " * ", "/": " / ", "square": " **2 "}
 
-        if operation in ("+", "-", "*", "/"):
-            self.sequence = {"operation": operation, "operand": []}
-            if isinstance(operand[0], Operation):
-                self.sequence["operand"].append(operand[0].sequence)
-                self.formula.append(operand[0].formula)
-                self.printable.append(operand[0].printable)
-            else:
-                self.sequence["operand"].append(operand[0])
-                self.formula.append(repr(operand[0]))
-                self.printable.append(str(operand[0]))
-            self.formula.append(f" {operation} ")
-            self.printable.append(f" {operation} ")
-
-            if isinstance(operand[1], Operation):
-                self.sequence["operand"].append(operand[1].sequence)
-                self.formula.append(operand[1].formula)
-                self.printable.append(operand[1].printable)
-            else:
-                self.sequence["operand"].append(operand[1])
-                self.formula.append(repr(operand[1]))
-                self.printable.append(str(operand[1]))
-
-        elif operation == "square":
-            self.sequence = {"operation": operation, "operand": []}
-            if isinstance(operand, Operation):
-                self.sequence["operand"].append(operand.sequence)
-                self.formula.append(operand.formula)
-                self.printable.append(operand.printable)
-            else:
-                self.sequence["operand"].append(operand)
-                self.formula.append(repr(operand))
-                self.printable.append(str(operand))
-            self.formula.append(" ** 2 ")
-            self.printable.append(" ** 2 ")
+        if operation in ("+", "-", "*", "/", "square"):
+            for i, operand in enumerate(operands):
+                if isinstance(operand, Operation):
+                    self.sequence_json["operand"].append(operand.sequence_json)
+                    self.formula.append(operand.formula)
+                    self.sequence_str.append(operand.sequence_str)
+                else:
+                    self.sequence_json["operand"].append(operand)
+                    self.formula.append(repr(operand))
+                    self.sequence_str.append(str(operand))
+                if i < len(operands)-1 or operation == "square":
+                    self.formula.append(f" {self.operand_for[operation]} ")
+                    self.sequence_str.append(f" {self.operand_str[operation]} ")
 
         elif operation == "bracket":
-            self.sequence = {"operation": operation, "operand": []}
-            if isinstance(operand, Operation):
-                self.sequence["operand"].append(operand.sequence)
+            if isinstance(operands[0], Operation):
+                self.sequence_json["operand"].append(operands[0].sequence_json)
                 self.formula.append(" (")
-                self.formula.append(operand.formula)
+                self.formula.append(operands[0].formula)
                 self.formula.append(") ")
-                self.printable.append(" (")
-                self.printable.append(operand.printable)
-                self.printable.append(") ")
+                self.sequence_str.append(" (")
+                self.sequence_str.append(operands[0].sequence_str)
+                self.sequence_str.append(") ")
             else:
-                raise ValueError("Bracket can only be performed only over another Operation")
+                raise ValueError("Bracket can only be performed over another Operation")
 
         else:
             raise ValueError("Unsupported Operation")
 
         self.formula = "".join(x for x in self.formula)
-        self.printable = "".join(x for x in self.printable)
-        self.printable = self.printable.replace("/", "\u00F7")
+        self.sequence_str = "".join(x for x in self.sequence_str)
         self.result = eval(self.formula)
 
 
 class Question1:
+    """Framing BODMAS questions of the type a * b + c / d
 
-    def __init__(self):
-        self.allowed_operations = ["/", "*", "+", "-"]
-        self.operand_count = 4
-        self.range = (1, 100)
-        self.operand_seq = [None]*self.operand_count
-        self.operation_seq = sample(self.allowed_operations * 2, self.operand_count-1)
+    """
 
+    def __init__(self, operations=["/", "*", "+", "-"], operand_count=4, value_range=(1, 100)):
+        self.operations = operations
+        self.operand_count = operand_count
+        self.value_range = value_range
+        self._operation_count = self.operand_count - 1
+        self._sample_operations = self.operations * (max(len(self.operations), 2) * 2)
+        self.operand_seq = None
+        self.operation_seq = None
+        self.question = None
+
+    @property
+    def operations(self):
+        return self.__operations
+
+    @operations.setter
+    def operations(self, operations):
+        self.__operations = operations
+        self._sample_operations = self.operations * (max(len(self.operations), 2) * 2)
+
+    @property
+    def operand_count(self):
+        return self.__operand_count
+
+    @operand_count.setter
+    def operand_count(self, operand_count):
+        self.__operand_count = operand_count
+        self._operation_count = self.operand_count - 1
+
+    def frame_integer_question(self):
+        self.operand_seq = [None] * self.operand_count
+        self.operation_seq = sample(self._sample_operations, self._operation_count)
+        dividend_seq = [1]*self._operation_count
         for i, y in enumerate(self.operation_seq):
             if y == "/":
                 if not self.operand_seq[i]:
-                    self.operand_seq[i+1], self.operand_seq[i] = self._create_division()
+                    self.operand_seq[i+1], self.operand_seq[i] = self._create_integer_division()
+                    dividend_seq[i] = self.operand_seq[i+1] * self.operand_seq[i]
                 else:
-                    self.operand_seq[i+1], _ = self._create_division(divisor=self.operand_seq[i])
+                    self.operand_seq[i+1], _ = self._create_integer_division(divisor=dividend_seq[i-1])
+                    dividend_seq[i] = dividend_seq[i-1] * self.operand_seq[i+1]
 
         for i, y in enumerate(self.operation_seq):
             if y == "*":
                 if not (self.operand_seq[i] or self.operand_seq[i+1]):
-                    self.operand_seq[i], self.operand_seq[i+1] = self._create_multiplication()
+                    self.operand_seq[i], self.operand_seq[i+1] = self._create_integer_multiplication()
                 elif not self.operand_seq[i]:
-                    self.operand_seq[i], _ = self._create_multiplication()
+                    self.operand_seq[i], _ = self._create_integer_multiplication()
                 elif not self.operand_seq[i+1]:
-                    self.operand_seq[i+1], _ = self._create_multiplication()
+                    self.operand_seq[i+1], _ = self._create_integer_multiplication()
 
         for i, y in enumerate(self.operation_seq):
             if y in ("+", "-"):
                 if not (self.operand_seq[i] or self.operand_seq[i+1]):
-                    self.operand_seq[i], self.operand_seq[i+1] = self._create_addition()
+                    self.operand_seq[i], self.operand_seq[i+1] = self._create_integer_addition()
                 elif not self.operand_seq[i]:
-                    self.operand_seq[i], _ = self._create_addition()
+                    self.operand_seq[i], _ = self._create_integer_addition()
                 elif not self.operand_seq[i+1]:
-                    self.operand_seq[i+1], _ = self._create_addition()
+                    self.operand_seq[i+1], _ = self._create_integer_addition()
 
         self.operand_seq.reverse()
         self.operation_seq.reverse()
-        self.question = self.frame_question()
+        self.question = self._combine_operations()
+        return self.question
 
-    def _create_division(self, divisor=None):
+    def _create_integer_division(self, divisor=None):
+        div_range = (int(Decimal(self.value_range[0]).sqrt()), int(Decimal(self.value_range[1]).sqrt()))
         if not divisor:
-            divisor = randint(self.range[0], Decimal(self.range[1]).sqrt())
-        quotient = randint(self.range[0], Decimal(self.range[1]).sqrt())
+            divisor = randint(*div_range)
+        quotient = randint(*div_range)
         dividend = quotient * divisor
         return dividend, divisor
 
-    def _create_multiplication(self):
-        a = randint(self.range[0], Decimal(self.range[1]).sqrt())
-        b = randint(self.range[0], Decimal(self.range[1]).sqrt())
+    def _create_integer_multiplication(self):
+        mul_range = (int(Decimal(self.value_range[0]).sqrt()), int(Decimal(self.value_range[1]).sqrt()))
+        a = randint(*mul_range)
+        b = randint(*mul_range)
         return a, b
 
-    def _create_addition(self):
-        a = randint(*self.range)
-        b = randint(*self.range)
+    def _create_integer_addition(self):
+        a = randint(*self.value_range)
+        b = randint(*self.value_range)
         return a, b
 
-    def frame_question(self):
+    def _combine_operations(self):
         first_operation = True
         for i, x in enumerate(self.operation_seq):
             if first_operation:
-                operation = Operation(x, (Decimal(self.operand_seq[i]), Decimal(self.operand_seq[i+1])))
+                operation = Operation(x, Decimal(self.operand_seq[i]), Decimal(self.operand_seq[i+1]))
             else:
-                operation = Operation(x, (operation, Decimal(self.operand_seq[i+1])))
+                operation = Operation(x, operation, Decimal(self.operand_seq[i+1]))
             first_operation = False
         return operation
 
@@ -141,11 +155,12 @@ if __name__ == "__main__":
     i = 0
     c = 0
     alive = True
+    arithmetic = Question1()
     while alive:
         i += 1
-        q = Question1()
-        question = q.question.printable
-        result = q.question.result
+        q = arithmetic.frame_question()
+        question = q.sequence_str
+        result = q.result
         message = f"{'#'*100} \n"
         message += f"QUESTION {str(i)}\n"
         message += f"{'#'*100} \n"
