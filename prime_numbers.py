@@ -75,7 +75,6 @@ primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67
 
 
 def prime_query(ratio=40, value_range=(1, 100)):
-    print(len(primes))
     i = choice(range(1, 100))
     p = [x for x in range(*value_range) if x in primes]
     a = [x for x in range(*value_range) if x not in p]
