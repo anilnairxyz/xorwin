@@ -105,20 +105,25 @@ def questioner(words):
     return random.sample(codes, len(codes))
 
 
+def numeric_codes_question():
+    solutions = []
+    while len(solutions) != 1:
+        blocks = picker('apis/recipes/numeric_codes.pkl')
+        words_4, words_3, queries = selector(blocks)
+        query = random.choice(queries)
+        codes = questioner(words_3)
+        solutions = solver(words_4, codes)
+    solution = solutions.pop()
+    reply = encoder(solution, codes, query)
+    return words_4, codes, query, reply
+
+
 if __name__ == "__main__":
     i = 0
     c = 0
     alive = True
     while alive:
-        blocks = picker('recipes/numeric_codes.pkl')
-        words_4, words_3, queries = selector(blocks)
-        query = random.choice(queries)
-        codes = questioner(words_3)
-        solutions = solver(words_4, codes)
-        if len(solutions) != 1:
-            continue
-        solution = solutions.pop()
-        reply = encoder(solution, codes, query)
+        words_4, codes, query, reply = numeric_codes_question()
         i += 1
         message = f"{'#'*100} \n"
         message += f"QUESTION {str(i)}\n"
