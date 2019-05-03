@@ -108,7 +108,8 @@ def questioner(words):
 def numeric_codes_question():
     solutions = []
     while len(solutions) != 1:
-        blocks = picker('apis/recipes/numeric_codes.pkl')
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        blocks = picker(os.path.join(dir_path, 'recipes/numeric_codes.pkl'))
         words_4, words_3, queries = selector(blocks)
         query = random.choice(queries)
         codes = questioner(words_3)
