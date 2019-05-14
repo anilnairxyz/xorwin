@@ -1,7 +1,7 @@
 from random import sample, randint, choice
 from decimal import Decimal
 from fractions import Fraction
-from mixed_fractions import Mixed
+from .mixed_fractions import Mixed
 from clint.textui import colored, puts, prompt
 
 
